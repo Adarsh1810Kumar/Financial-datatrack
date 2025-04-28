@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial data <value=""></data> - Indian Financial Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'indigo': {
+                            '50': '#eef2ff',
+                            '100': '#e0e7ff',
+                            '200': '#c7d2fe',
+                            '300': '#a5b4fc',
+                            '400': '#818cf8',
+                            '500': '#6366f1',
+                            '600': '#4f46e5',
+                            '700': '#4338ca',
+                            '800': '#3730a3',
+                            '900': '#312e81',
+                        },
+                        'saffron': '#FF9933',
+                        'green': '#138808',
+                        'navy': '#000080',
+                        'peacock': '#1DA1F2',
+                        'lotus': '#E0115F',
+                    },
+                    fontFamily: {
+                        'poppins': ['Poppins', 'sans-serif'],
+                        'montserrat': ['Montserrat', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'pulse-slow': 'pulse 3s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                    },
+                }
+            }
+        }
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8fafc;
+            background-image: radial-gradient(#c7d2fe 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            flex-direction: column;
+        }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4f46e5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .sidebar {
+            background: linear-gradient(180deg, #4f46e5 0%, #312e81 100%);
+        }
+        .nav-item {
+            transition: all 0.3s ease;
+            border-radius: 8px;
+        }
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        .nav-item.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid #FF9933;
+        }
+        .card {
+            transition: all 0.3s ease;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #FF9933, #138808, #000080);
+        }
+        .transaction-row {
+            transition: all 0.3s ease;
+        }
+        .transaction-row:hover {
+            background-color: #f8fafc;
+            transform: scale(1.01);
+        }
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .diwali-light {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            box-shadow: 0 0 10px 2px;
+            animation: twinkle 2s infinite alternate;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <div class="loading-spinner mb-4"></div>
+        <h2 class="text-indigo-700 font-bold text-xl animate-pulse">Loading Your Financial Universe...</h2>
+        <div class="mt-4 flex space-x-2">
+            <div class="w-3 h-3 bg-saffron rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+            <div class="w-3 h-3 bg-green rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+            <div class="w-3 h-3 bg-navy rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
+        </div>
+    </div>
+    <div id="diwaliLights"></div>
+    <div class="min-h-screen flex">
+        <nav class="sidebar w-64 min-h-screen text-white shadow-xl hidden md:block">
+            <div class="p-6 flex items-center space-x-3">
+                <div class="bg-white p-2 rounded-lg shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#4f46e5" class="w-8 h-8">
+                        <path d="M12 7.5a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" />
+                        <path fill-rule="evenodd" d="M1.5 4.875C1.5 3.839 2.34 3 3.375 3h17.25c1.035 0 1.875.84 1.875 1.875v9.75c0 1.036-.84 1.875-1.875 1.875H3.375A1.875 1.875 0 011.5 14.625v-9.75zM8.25 9.75a3.75 3.75 0 117.5 0 3.75 3.75 0 01-7.5 0zM18.75 9a.75.75 0 00-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 00.75-.75V9.75a.75.75 0 00-.75-.75h-.008zM4.5 9.75A.75.75 0 015.25 9h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75H5.25a.75.75 0 01-.75-.75V9.75z" clip-rule="evenodd" />
+                        <path d="M2.25 18a.75.75 0 000 1.5c5.4 0 10.63.722 15.6 2.075 1.19.324 2.4-.558 2.4-1.82V18.75a.75.75 0 00-.75-.75H2.25z" />
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold font-montserrat">Fini <span class="text-xs bg-saffron text-white px-2 py-1 rounded-full">PRO</span></h1>
+            </div>
+            <div class="mt-12 px-4">
+                <ul class="space-y-2">
+                    <li class="nav-item active px-4 py-3 flex items-center cursor-pointer">
+                        <i class="bi bi-house-door mr-3 text-lg"></i>
+                        <span class="font-medium">Dashboard</span>
+                    </li>
+                    <li class="nav-item px-4 py-3 flex items-center cursor-pointer">
+                        <i class="bi bi-wallet2 mr-3 text-lg"></i>
+                        <span class="font-medium">Accounts</span>
+                    </li>
+                    <li class="nav-item px-4 py-3 flex items-center cursor-pointer">
+                        <i class="bi bi-graph-up-arrow mr-3 text-lg"></i>
+                        <span class="font-medium">Investments</span>
+                        <span class="ml-auto bg-peacock text-white text-xs px-2 py-1 rounded-full">New</span>
+                    </li>
+                    <li class="nav-item px-4 py-3 flex items-center cursor-pointer">
+                        <i class="bi bi-pie-chart mr-3 text-lg"></i>
+                        <span class="font-medium">Budget</span>
+                    </li>
+                    <li class="nav-item px-4 py-3 flex items-center cursor-pointer">
+                        <i class="bi bi-currency-rupee mr-3 text-lg"></i>
+                        <span class="font-medium">UPI</span>
+                    </li>
+                    <li class="nav-item px-4 py-3 flex items-center cursor-pointer">
+                        <i class="bi bi-taxi-front mr-3 text-lg"></i>
+                        <span class="font-medium">EMI Calculator</span>
+                    </li>
+                    <li class="nav-item px-4 py-3 flex items-center cursor-pointer">
+                        <i class="bi bi-receipt mr-3 text-lg"></i>
+                        <span class="font-medium">Tax Planner</span>
+                    </li>
+                    <li class="nav-item px-4 py-3 flex items-center cursor-pointer">
+                        <i class="bi bi-gear mr-3 text-lg"></i>
+                        <span class="font-medium">Settings</span>
+                    </li>
+                </ul>
+                
+                <div class="mt-12 mx-4 p-4 bg-indigo-700 rounded-xl relative overflow-hidden">
+                    <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-indigo-600 rounded-full opacity-20"></div>
+                    <div class="relative z-10">
+                        <h3 class="font-semibold">Upgrade to Pro</h3>
+                        <p class="text-sm mt-1 opacity-80">Get premium features and insights</p>
+                        <button class="mt-3 bg-saffron text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-opacity-90 transition">Upgrade Now</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <header class="md:hidden fixed top-0 left-0 right-0 bg-white shadow-md z-50 p-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#4f46e5" class="w-6 h-6">
+                    <path d="M12 7.5a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" />
+                    <path fill-rule="evenodd" d="M1.5 4.875C1.5 3.839 2.34 3 3.375 3h17.25c1.035 0 1.875.84 1.875 1.875v9.75c0 1.036-.84 1.875-1.875 1.875H3.375A1.875 1.875 0 011.5 14.625v-9.75zM8.25 9.75a3.75 3.75 0 117.5 0 3.75 3.75 0 01-7.5 0zM18.75 9a.75.75 0 00-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 00.75-.75V9.75a.75.75 0 00-.75-.75h-.008zM4.5 9.75A.75.75 0 015.25 9h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75H5.25a.75.75 0 01-.75-.75V9.75z" clip-rule="evenodd" />
+                    <path d="M2.25 18a.75.75 0 000 1.5c5.4 0 10.63.722 15.6 2.075 1.19.324 2.4-.558 2.4-1.82V18.75a.75.75 0 00-.75-.75H2.25z" />
+                </svg>
+                <h1 class="text-xl font-bold font-montserrat text-indigo-600">FinTrack</h1>
+            </div>
+            <button id="mobileMenuButton" class="text-indigo-600">
+                <i class="bi bi-list text-2xl"></i>
+            </button>
+        </header>
+        <div id="mobileSidebar" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+            <div class="sidebar w-64 min-h-screen text-white shadow-xl transform transition-transform duration-300 -translate-x-full">
+                <div class="p-4 flex justify-between items-center">
+                    <div class="flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="w-6 h-6">
+                            <path d="M12 7.5a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" />
+                            <path fill-rule="evenodd" d="M1.5 4.875C1.5 3.839 2.34 3 3.375 3h17.25c1.035 0 1.875.84 1.875 1.875v9.75c0 1.036-.84 1.875-1.875 1.875H3.375A1.875 1.875 0 011.5 14.625v-9.75zM8.25 9.75a3.75 3.75 0 117.5 0 3.75 3.75 0 01-7.5 0zM18.75 9a.75.75 0 00-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 00.75-.75V9.75a.75.75 0 00-.75-.75h-.008zM4.5 9.75A.75.75 0 015.25 9h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75H5.25a.75.75 0 01-.75-.75V9.75z" clip-rule="evenodd" />
+                            <path d="M2.25 18a.75.75 0 000 1.5c5.4 0 10.63.722 15.6 2.075 1.19.324 2.4-.558 2.4-1.82V18.75a.75.75 0 00-.75-.75H2.25z" />
+                        </svg>
+                        <h1 class="text-xl font-bold font-montserrat">Track</h1>
+                    </div>
+                    <button id="closeMobileMenu" class="text-white">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <div class="mt-8 px-4">
+                    <ul class="space-y-2">
+                        <li class="nav-item active px-4 py-3 flex items-center cursor-pointer">
+                            <i class="bi bi-house-door mr-3 text-lg"></i>
+                            <span class="font-medium">Dashboard</span>
+                        </li>
+                        <li class="nav-item px-4 py-3 flex items-center cursor-pointer">
+                            <i class="bi bi-wallet2 mr-3 text-lg"></i>
+                            <span class="font-medium">Accounts</span>
+                        </li>
+                        <li class="nav-item px-4 py-3 flex items-center cursor-pointer">
+                            <i class="bi bi-graph-up-arrow mr-3 text-lg"></i>
+                            <span class="font-medium">Investments</span>
+                            <span class="ml-auto bg-peacock text-white text-xs px-2 py-1 rounded-full">New</span>
+                        </li>
+                        <li class="nav-item px-4 py-3 flex items-center cursor-pointer">
+                            <i class="bi bi-pie-chart mr-3 text-lg"></i>
+                            <span class="font-medium">Budget</span>
+                        </li>
+                        <li class="nav-item px-4 py-3 flex items-center cursor-pointer">
+                            <i class="bi bi-currency-rupee mr-3 text-lg"></i>
+                            <span class="font-medium">UPI</span>
+                        </li>
+                        <li class="nav-item px-4 py-3 flex items-center cursor-pointer">
+                            <i class="bi bi-taxi-front mr-3 text-lg"></i>
+                            <span class="font-medium">EMI Calculator</span>
+                        </li>
+                        <li class="nav-item px-4 py-3 flex items-center cursor-pointer">
+                            <i class="bi bi-receipt mr-3 text-lg"></i>
+                            <span class="font-medium">Tax Planner</span>
+                        </li>
+                        <li class="nav-item px-4 py-3 flex items-center cursor-pointer">
+                            <i class="bi bi-gear mr-3 text-lg"></i>
+                            <span class="font-medium">Settings</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <main class="flex-1 md:ml-64 p-4 md:p-8 mt-16 md:mt-0">
+            <div class="bg-gradient-to-r from-indigo-500 to-indigo-700 text-white rounded-xl p-6 mb-8 relative overflow-hidden animate-fade-in">
+                <div class="absolute -right-10 -top-10 w-32 h-32 bg-indigo-400 rounded-full opacity-20"></div>
+                <div class="absolute -right-20 top-20 w-40 h-40 bg-indigo-300 rounded-full opacity-10"></div>
+                <div class="relative z-10">
+                    <h1 class="text-2xl md:text-3xl font-bold font-montserrat">Namaste, Adarsh <span class="animate-waving-hand">👋</span></h1>
+                    <p class="mt-2 opacity-90">Here's your financial overview for today</p>
+                    <div class="mt-4 flex items-center space-x-2">
+                        <div class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm flex items-center">
+                            <i class="bi bi-calendar-check mr-1"></i>
+                            <span>28 April;, 2025</span>
+                        </div>
+                        <div class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm flex items-center">
+                            <i class="bi bi-brightness-high mr-1"></i>
+                            <span>Special</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="card bg-white shadow-md animate-slide-up" style="animation-delay: 0.1s">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Total Balance</p>
+                                <h3 class="text-2xl font-bold mt-1 text-indigo-600">₹2,45,628</h3>
+                                <p class="text-green-500 text-sm mt-2 flex items-center">
+                                    <i class="bi bi-arrow-up mr-1"></i> 12.5% from last month
+                                </p>
+                            </div>
+                            <div class="bg-indigo-100 p-3 rounded-lg text-indigo-600">
+                                <i class="bi bi-wallet2 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-white shadow-md animate-slide-up" style="animation-delay: 0.2s">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Monthly Income</p>
+                                <h3 class="text-2xl font-bold mt-1 text-green-600">₹83,500</h3>
+                                <p class="text-green-500 text-sm mt-2 flex items-center">
+                                    <i class="bi bi-arrow-up mr-1"></i> 8.2% from last month
+                                </p>
+                            </div>
+                            <div class="bg-green-100 p-3 rounded-lg text-green-600">
+                                <i class="bi bi-cash-stack text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-white shadow-md animate-slide-up" style="animation-delay: 0.3s">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Monthly Expenses</p>
+                                <h3 class="text-2xl font-bold mt-1 text-lotus">₹32,755</h3>
+                                <p class="text-red-500 text-sm mt-2 flex items-center">
+                                    <i class="bi bi-arrow-down mr-1"></i> 5.5% from last month
+                                </p>
+                            </div>
+                            <div class="bg-red-100 p-3 rounded-lg text-red-600">
+                                <i class="bi bi-credit-card text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-white shadow-md animate-slide-up" style="animation-delay: 0.4s">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Investments</p>
+                                <h3 class="text-2xl font-bold mt-1 text-peacock">₹5,42,150</h3>
+                                <p class="text-green-500 text-sm mt-2 flex items-center">
+                                    <i class="bi bi-graph-up-arrow mr-1"></i> 18.7% annual growth
+                                </p>
+                            </div>
+                            <div class="bg-blue-100 p-3 rounded-lg text-blue-600">
+                                <i class="bi bi-graph-up text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="card bg-white shadow-md animate-fade-in">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold font-montserrat">Spending Overview</h3>
+                            <div class="relative">
+                                <select class="appearance-none bg-gray-100 border-0 text-sm rounded-lg px-3 py-1 pr-8 focus:outline-none">
+                                    <option>february 2025</option>
+                                    <option>March 2025</option>
+                                    <option>April 2025</option>
+                                </select>
+                                <i class="bi bi-chevron-down absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs"></i>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="spendingChart"></canvas>
+                        </div>
+                        <div class="mt-4 flex justify-center space-x-4">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-indigo-500 rounded-full mr-2"></div>
+                                <span class="text-xs text-gray-600">Housing</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                                <span class="text-xs text-gray-600">Food</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-saffron rounded-full mr-2"></div>
+                                <span class="text-xs text-gray-600">Transport</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-lotus rounded-full mr-2"></div>
+                                <span class="text-xs text-gray-600">Entertainment</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card bg-white shadow-md animate-fade-in">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold font-montserrat">Investment Portfolio</h3>
+                            <div class="relative">
+                                <select class="appearance-none bg-gray-100 border-0 text-sm rounded-lg px-3 py-1 pr-8 focus:outline-none">
+                                    <option>Last 6 Months</option>
+                                    <option>Last Year</option>
+                                    <option>Last 3 Years</option>
+                                </select>
+                                <i class="bi bi-chevron-down absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs"></i>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="investmentChart"></canvas>
+                        </div>
+                        <div class="mt-4 flex justify-center space-x-4">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-indigo-500 rounded-full mr-2"></div>
+                                <span class="text-xs text-gray-600">Stocks</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                                <span class="text-xs text-gray-600">Mutual Funds</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-saffron rounded-full mr-2"></div>
+                                <span class="text-xs text-gray-600">FD/RD</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-peacock rounded-full mr-2"></div>
+                                <span class="text-xs text-gray-600">Crypto</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div class="card bg-white shadow-md lg:col-span-2 animate-slide-up">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold font-montserrat">Recent Transactions</h3>
+                            <button class="text-indigo-600 text-sm font-medium flex items-center">
+                                View All <i class="bi bi-chevron-right ml-1"></i>
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200" id="transactionsTable">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="card bg-white shadow-md animate-slide-up">
+                    <div class="p-6">
+                        <h3 class="text-lg font-semibold font-montserrat mb-4">Monthly Budget</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Housing</span>
+                                    <span class="text-sm font-medium text-gray-700">₹12,500/₹15,000</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-indigo-600 h-2 rounded-full" style="width: 83%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Food</span>
+                                    <span class="text-sm font-medium text-gray-700">₹8,200/₹10,000</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 82%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Transport</span>
+                                    <span class="text-sm font-medium text-gray-700">₹3,750/₹5,000</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-saffron h-2 rounded-full" style="width: 75%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Entertainment</span>
+                                    <span class="text-sm font-medium text-gray-700">₹2,800/₹4,000</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-lotus h-2 rounded-full" style="width: 70%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Savings</span>
+                                    <span class="text-sm font-medium text-gray-700">₹18,000/₹20,000</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-peacock h-2 rounded-full" style="width: 90%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 bg-indigo-50 p-4 rounded-lg">
+                            <div class="flex items-center">
+                                <div class="bg-indigo-100 p-2 rounded-lg mr-3">
+                                    <i class="bi bi-lightbulb text-indigo-600"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-indigo-800">Budget Tip</p>
+                                    <p class="text-xs text-indigo-600">You've saved ₹2,750 this month. Consider investing it!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <button class="bg-white p-4 rounded-lg shadow flex flex-col items-center justify-center hover:bg-indigo-50 transition animate-fade-in">
+                    <div class="bg-indigo-100 p-3 rounded-full text-indigo-600 mb-2">
+                        <i class="bi bi-send text-xl"></i>
+                    </div>
+                    <span class="text-sm font-medium">Send Money</span>
+                </button>
+                <button class="bg-white p-4 rounded-lg shadow flex flex-col items-center justify-center hover:bg-green-50 transition animate-fade-in" style="animation-delay: 0.1s">
+                    <div class="bg-green-100 p-3 rounded-full text-green-600 mb-2">
+                        <i class="bi bi-qr-code-scan text-xl"></i>
+                    </div>
+                    <span class="text-sm font-medium">UPI Pay</span>
+                </button>
+                <button class="bg-white p-4 rounded-lg shadow flex flex-col items-center justify-center hover:bg-saffron-50 transition animate-fade-in" style="animation-delay: 0.2s">
+                    <div class="bg-orange-100 p-3 rounded-full text-saffron mb-2">
+                        <i class="bi bi-currency-rupee text-xl"></i>
+                    </div>
+                    <span class="text-sm font-medium">Pay Bills</span>
+                </button>
+                <button class="bg-white p-4 rounded-lg shadow flex flex-col items-center justify-center hover:bg-peacock-50 transition animate-fade-in" style="animation-delay: 0.3s">
+                    <div class="bg-blue-100 p-3 rounded-full text-peacock mb-2">
+                        <i class="bi bi-graph-up-arrow text-xl"></i>
+                    </div>
+                    <span class="text-sm font-medium">Invest</span>
+                </button>
+            <div class="card bg-gradient-to-r from-saffron to-lotus text-white p-6 rounded-xl mb-8 relative overflow-hidden animate-pulse-slow">
+                <div class="absolute -right-20 -top-20 w-40 h-40 bg-white rounded-full opacity-10"></div>
+                <div class="absolute -left-10 bottom-0 w-32 h-32 bg-white rounded-full opacity-10"></div>
+                <div class="relative z-10">
+                    <h3 class="text-xl font-bold font-montserrat mb-2">Special Offers</h3>
+                    <p class="mb-4 opacity-90">Get exclusive discounts on investments and loans </p>
+                    <button class="bg-white text-saffron font-medium px-4 py-2 rounded-lg hover:bg-opacity-90 transition">Explore Offers</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function showLoading() {
+            document.getElementById('loading').classList.remove('hidden');
+        }
+        function hideLoading() {
+            document.getElementById('loading').classList.add('hidden');
+        }
+        document.getElementById('mobileMenuButton').addEventListener('click', function() {
+            document.getElementById('mobileSidebar').classList.remove('hidden');
+            setTimeout(() => {
+                document.querySelector('#mobileSidebar .sidebar').classList.remove('-translate-x-full');
+            }, 10);
+        });
+
+        document.getElementById('closeMobileMenu').addEventListener('click', function() {
+            document.querySelector('#mobileSidebar .sidebar').classList.add('-translate-x-full');
+            setTimeout(() => {
+                document.getElementById('mobileSidebar').classList.add('hidden');
+            }, 300);
+        });
+        function createDiwaliLights() {
+            const container = document.getElementById('diwaliLights');
+            const colors = ['#FF9933', '#138808', '#000080', '#FFD700', '#FF1493', '#00BFFF'];
+            
+            for (let i = 0; i < 30; i++) {
+                const light = document.createElement('div');
+                light.className = 'diwali-light';
+                light.style.left = `${Math.random() * 100}%`;
+                light.style.top = `${Math.random() * 100}%`;
+                light.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                light.style.animationDelay = `${Math.random() * 2}s`;
+                container.appendChild(light);
+            }
+        }
+        function initCharts() {
+            const spendingCtx = document.getElementById('spendingChart').getContext('2d');
+            new Chart(spendingCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Housing', 'Food', 'Transport', 'Utilities', 'Entertainment', 'Others'],
+                    datasets: [{
+                        data: [12500, 8200, 3750, 2800, 2200, 3305],
+                        backgroundColor: ['#4f46e5', '#10b981', '#FF9933', '#E0115F', '#1DA1F2', '#8b5cf6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `₹${context.raw.toLocaleString('en-IN')}`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true
+                    }
+                }
+            });
+            const investmentCtx = document.getElementById('investmentChart').getContext('2d');
+            new Chart(investmentCtx, {
+                type: 'line',
+                data: {
+                    labels: ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'],
+                    datasets: [{
+                        label: 'Portfolio Value (₹)',
+                        data: [480000, 502000, 490000, 515000, 525000, 535000, 542150],
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#4f46e5',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `₹${context.raw.toLocaleString('en-IN')}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + (value / 1000) + 'k';
+                                }
+                            },
+                            grid: {
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        const transactions = [
+            { date: '14 Mar', description: 'Salary - Infosys', category: 'Income', amount: 83500, icon: 'bi-cash-stack', color: 'green' },
+            { date: '17 Mar', description: 'BigBasket Grocery', category: 'Food', amount: -1850, icon: 'bi-basket', color: 'green' },
+            { date: '12 April', description: 'Amazon India', category: 'Shopping', amount: -4599, icon: 'bi-bag', color: 'lotus' },
+            { date: '10 April', description: 'Ola Ride', category: 'Transport', amount: -350, icon: 'bi-taxi-front', color: 'saffron' },
+            { date: '08 April', description: 'Zomato Order', category: 'Food', amount: -620, icon: 'bi-egg-fried', color: 'green' },
+            { date: '05 April', description: 'LIC Premium', category: 'Insurance', amount: -5200, icon: 'bi-shield-check', color: 'peacock' },
+            { date: '01 April', description: 'Rent Payment', category: 'Housing', amount: -12500, icon: 'bi-house', color: 'indigo' }
+        ];
+        function populateTransactions() {
+            const tableBody = document.getElementById('transactionsTable');
+            transactions.forEach(tx => {
+                const row = document.createElement('tr');
+                row.className = 'transaction-row';
+                const formattedAmount = tx.amount > 0 
+                    ? `+₹${tx.amount.toLocaleString('en-IN')}` 
+                    : `-₹${Math.abs(tx.amount).toLocaleString('en-IN')}`;
+                
+                row.innerHTML = `
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${tx.date}</td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="bg-${tx.color}-100 p-2 rounded-lg mr-3 text-${tx.color}-600">
+                                <i class="bi ${tx.icon}"></i>
+                            </div>
+                            <span class="text-sm font-medium">${tx.description}</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-${tx.color}-100 text-${tx.color}-800">${tx.category}</span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium ${
+                        tx.amount > 0 ? 'text-green-600' : 'text-red-600'
+                    }">${formattedAmount}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            showLoading();
+            createDiwaliLights();
+            
+            setTimeout(() => {
+                initCharts();
+                populateTransactions();
+                hideLoading();
+                document.querySelectorAll('.animate-slide-up, .animate-fade-in').forEach(el => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                });
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
